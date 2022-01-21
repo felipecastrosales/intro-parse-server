@@ -35,3 +35,34 @@ Parse.Cloud.define("delete-product", async (request) => {
   product.destroy({useMasterKey: true});
   return "Product deleted";
 });
+
+Parse.Cloud.define("get-product", async (request) => {
+  if (request.params.productId == null) throw "Invalid product";
+  const query = new Parse.Query(Product);
+  const product = await query.get(request.params.productId, {useMasterKey: true});
+  const json = product.toJSON();
+  return {
+    name: json.name,
+    price: json.price,
+    stock: json.stock
+  };
+});
+
+Parse.Cloud.define("list-products", async (request) => {
+  const page = request.params.page;
+  const query = new Parse.Query(Product);
+  // query.equalTo("isSelling", true);
+  query.greaterThan("price", 100); // query.lessThan("price", 2000); //orEqualTo
+  query.ascending("stock"); // descending
+  query.limit(2);
+  query.skip(page); // page * 2
+  const products = await query.find({useMasterKey: true});
+  return products.map(function(p){
+    p = p.toJSON();
+    return {
+      name: p.name,
+      price: p.price,
+      stock: p.stock
+    } 
+  });
+});
